@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="container mt-5">
+    <h2>{{ exam.title }}</h2>
+    <p><strong>Instructions:</strong></p>
+    <ul>
+      <li>Do not refresh the page or navigate outside during the exam.</li>
+      <li>Tab switch will be monitored.</li>
+      <li>Duration: {{ exam.duration }} minutes.</li>
+    </ul>
+    <form method="get" action="{% url 'take_exam_combined' slug=exam.slug %}">
+      <button class="btn btn-primary">Start Exam</button>
+    </form>
+  </div>
+
+  <script>
+    window.history.pushState(null, null, window.location.href);
+    window.addEventListener('popstate', function () {
+        history.pushState(null, null, window.location.href);
+    });
+  </script>
+{% endblock %}

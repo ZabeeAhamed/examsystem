@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}{{ exam.title }} - Result{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <!-- Header -->
+  <div class="text-center mb-4">
+    <h2 class="fw-bold">{{ exam.title }} - Result</h2>
+    <p class="lead">🎯 Score: <strong>{{ submission.score }} / {{ total_questions }}</strong></p>
+  </div>
+
+  <!-- Results Table -->
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <table class="table table-hover table-bordered mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="w-50">Question</th>
+            <th>Your Answer</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for answer in answers %}
+          <tr>
+            <td>{{ answer.question.text }}</td>
+            <td>{{ answer.selected_option.text }}</td>
+            <td>
+              {% if answer.selected_option.is_correct %}
+                <span class="badge bg-success px-3 py-2">✔ Correct</span>
+              {% else %}
+                <span class="badge bg-danger px-3 py-2">✘ Incorrect</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <script>
+    localStorage.removeItem(`exam_warnings_{{ exam.slug }}`);
+
+  </script>
+ 
+
+</div>
+{% endblock %}

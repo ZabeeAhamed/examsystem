@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}{{ exam.title }} - Exam{% endblock %}
+{% block content %}
+<div class="container my-4">
+
+  <div class="alert alert-info text-center">
+    Time Remaining: <span id="exam-timer">--:--</span>
+  </div>
+  <div id="warnings" class="my-3 text-center"></div>
+
+  <!-- Main exam answer form -->
+  <form id="main-exam-form" method="post">
+    {% csrf_token %}
+
+    {% for question in questions %}
+    <div class="card my-3">
+      <div class="card-header">
+        <strong>Question {{ forloop.counter }} of {{ questions|length }}</strong>
+      </div>
+      <div class="card-body">
+        <h5>{{ question.text }}</h5>
+        {% for opt in question.options.all %}
+          <div class="form-check">
+            <input
+              class="form-check-input exam-radio"
+              type="radio"
+              name="option_{{ question.id }}"
+              id="option{{ opt.id }}"
+              value="{{ opt.id }}"
+              data-question="{{ question.id }}"
+              {% if selected_answers|get_item:question.id == opt.id %}checked{% endif %}
+              required
+            >
+            <label class="form-check-label" for="option{{ opt.id }}">
+              {{ opt.text }}
+            </label>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+
+    <div class="text-end my-4">
+      <button type="submit" class="btn btn-success">Submit Exam</button>
+    </div>
+  </form>
+
+  <!-- Hidden terminate form, gets updated in JS -->
+  <form id="terminate-form" method="post" style="display:none;">
+    {% csrf_token %}
+    {% for question in questions %}
+      {% if selected_answers|get_item:question.id %}
+        <input type="hidden" name="option_{{ question.id }}" value="{{ selected_answers|get_item:question.id }}">
+      {% endif %}
+    {% endfor %}
+  </form>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Timer logic
+let timeLeft = {{ duration }} * 60;
+
+function pad(n) { return n < 10 ? '0' + n : n; }
+
+function updateTimer() {
+    if (timeLeft <= 0) {
+        document.getElementById('exam-timer').innerText = '00:00';
+        submitTerminateForm();
+    } else {
+        const mins = Math.floor(timeLeft / 60);
+        const secs = timeLeft % 60;
+        document.getElementById('exam-timer').innerText = pad(mins) + ':' + pad(secs);
+        timeLeft--;
+        setTimeout(updateTimer, 1000);
+    }
+}
+updateTimer();
+
+// --- Hidden Form Synchronization Logic ---
+function syncTerminateForm(questionId, selectedOptionId) {
+  let terminateForm = document.getElementById('terminate-form');
+  let input = terminateForm.querySelector('input[name="option_' + questionId + '"]');
+  if (input) {
+    input.value = selectedOptionId;
+  } else {
+    input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'option_' + questionId;
+    input.value = selectedOptionId;
+    terminateForm.appendChild(input);
+  }
+}
+
+// Set up event listeners for answer changes
+document.querySelectorAll('.exam-radio').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+        syncTerminateForm(this.dataset.question, this.value);
+    });
+});
+
+// On first page load: ensure hidden form reflects current answers
+(function initializeTerminateFormFromMain() {
+  document.querySelectorAll('.exam-radio:checked').forEach(function(radio) {
+      syncTerminateForm(radio.dataset.question, radio.value);
+  });
+})();
+
+function submitTerminateForm() {
+    // Just before submit: force hidden form to fully sync with main form (backup)
+    document.querySelectorAll('.exam-radio:checked').forEach(function(radio) {
+        syncTerminateForm(radio.dataset.question, radio.value);
+    });
+    document.getElementById('terminate-form').submit();
+}
+
+// Disable back navigation
+window.history.pushState(null, '', window.location.href);
+window.addEventListener('popstate', function () {
+    window.history.pushState(null, '', window.location.href);
+});
+
+// Tab switch warnings, auto-terminate after maxWarnings
+let warningCount = 0;
+const maxWarnings = 3;
+
+document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+        warningCount++;
+        if (warningCount < maxWarnings) {
+            document.getElementById('warnings').innerHTML =
+              `<div class='alert alert-warning'>Warning ${warningCount}/3: Do not switch tabs!</div>`;
+        } else {
+            document.getElementById('warnings').innerHTML =
+              "<div class='alert alert-danger'>Final Warning! Auto-Submitting...</div>";
+            setTimeout(() => { submitTerminateForm(); }, 1500);
+        }
+    }
+});
+
+// 🚫 Disable Right-Click Context Menu
+document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+// 🚫 Disable Text Selection
+document.addEventListener('selectstart', function (e) { e.preventDefault(); });
+// 🚫 Disable Copy Shortcut (Ctrl+C, Command+C)
+document.addEventListener('copy', function (e) { e.preventDefault(); });
+// 🚫 Disable Keyboard Shortcuts (Ctrl+C etc.)
+document.addEventListener('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') e.preventDefault();
+    // Block F5 and Ctrl+R
+    if ((e.key === 'F5') ||
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'r')) {
+        e.preventDefault();
+    }
+});
+
+// Disable cut, paste, dragstart
+['cut', 'paste', 'dragstart'].forEach(evt =>
+    document.addEventListener(evt, function (e) { e.preventDefault(); })
+);
+
+// Block browser reloading from context menu (optional extra)
+document.addEventListener('contextmenu', function (e) {
+    const reloadText = ['reload', 'refresh'];
+    if (e.target && reloadText.some(word => e.target.innerText?.toLowerCase().includes(word))) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}
