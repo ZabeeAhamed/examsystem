@@ -1,3 +1,4 @@
+[Screencast from 28-07-25 07-59-43 PM IST.webm](https://github.com/user-attachments/assets/25c2f700-7e86-4706-b8af-6fc2deae35de)
 # Examify 📝
 
 **Examify** is a full-featured online examination platform designed for schools, colleges, coaching centers, and certification bodies. Built with Django and PostgreSQL, it offers secure, scalable, and real-time assessments with a modern and responsive user interface.
