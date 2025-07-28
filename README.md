@@ -33,7 +33,7 @@ Examify transforms traditional assessments into a digital experience with featur
 | Others    | Django ORM, Middleware     |
 
 ---
-
+<pre>
 ## 📂 Project Structure
 
 examsystem/
@@ -45,7 +45,7 @@ examsystem/
 ├── examsystem/ # Project settings and URLs
 ├── manage.py
 └── requirements.txt
-
+</pre>
 
 ---
 
