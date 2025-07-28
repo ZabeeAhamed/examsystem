@@ -76,7 +76,8 @@ examsystem/
 Create a database and user
 
 Update credentials in settings.py
-4. Run migrations and start server:
+
+4.Run migrations and start server:
 
 python manage.py migrate
 python manage.py runserver
